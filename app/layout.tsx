@@ -11,7 +11,8 @@ const geistMono = Geist_Mono({ subsets: ["latin"] })
 export const metadata: Metadata = {
   title: "Task Tracking",
   description: "Project management dashboard",
-  generator: "v0.app",
+  manifest: "/manifest.json",
+  themeColor: "#ffffff",
 }
 
 export default function RootLayout({
