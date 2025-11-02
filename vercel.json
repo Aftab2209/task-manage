@@ -1,0 +1,6 @@
+{
+  "crons": [{
+    "path": "/api/cron/calculate-fines?secret=YOUR_CRON_SECRET",
+    "schedule": "59 18 * * *"
+  }]
+}
