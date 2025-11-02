@@ -1,4 +1,3 @@
-// next.config.mjs
 import withPWAInit from 'next-pwa';
 
 const withPWA = withPWAInit({
@@ -10,8 +9,19 @@ const withPWA = withPWAInit({
 
 const nextConfig = {
   reactStrictMode: true,
+
+  // 👇 add this line
+  experimental: {
+    turbo: false,
+  },
+
   images: {
-    domains: ['your-image-domains.com'],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '**',
+      },
+    ],
   },
 };
 
