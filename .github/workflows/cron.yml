@@ -4,7 +4,7 @@ name: Daily and 5-Min Cron Jobs
 on:
   schedule:
     - cron: "30 18 * * *"   # Runs every day at 00:00 IST
-    - cron: "*/5 * * * *"   # Runs every 5 minutes
+    - cron: "30 4 * * *"   # Runs every 5 minutes
   workflow_dispatch:         # Allows manual trigger from GitHub UI
 
 jobs:
@@ -15,6 +15,6 @@ jobs:
         if: github.event.schedule == '30 18 * * *'
         run: curl -s https://task-manage-azure.vercel.app/api/cron/calculate-fines
         
-      - name: Test 5-min cron
+      - name: Morning fine calculation
         if: github.event.schedule == '*/5 * * * *'
         run: curl -s https://task-manage-azure.vercel.app/api/cron/calculate-morning-jobs
