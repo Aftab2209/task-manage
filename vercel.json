@@ -1,6 +1,8 @@
 {
-  "crons": [{
-    "path": "/api/cron/calculate-fines?secret=YOUR_CRON_SECRET",
-    "schedule": "59 18 * * *"
-  }]
+  "crons": [
+    {
+      "path": "/api/cron/calculate-fines?secret=your-secure-random-string",
+      "schedule": "30 18 * * *"
+    }
+  ]
 }

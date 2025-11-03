@@ -49,22 +49,11 @@ export async function PATCH(request, { params }) {
       
       // Check with .find() to see what's actually there
       const allTaskTypes = await TaskType.find({});
-      console.log('All task types count:', allTaskTypes.length);
-      console.log('All task types details:', allTaskTypes.map(tt => ({
-        id: tt._id.toString(),
-        idType: typeof tt._id,
-        name: tt.name,
-        actualId: tt._id
-      })));
+
       
       // Compare the IDs byte-by-byte
       if (allTaskTypes.length > 0) {
         const firstTask = allTaskTypes[0];
-        console.log('Comparing IDs:');
-        console.log('  Looking for:', taskTypeId);
-        console.log('  Found in DB:', firstTask._id.toString());
-        console.log('  Are they equal?', firstTask._id.toString() === taskTypeId);
-        console.log('  ObjectId.equals?', firstTask._id.equals(new mongoose.Types.ObjectId(taskTypeId)));
       }
       
       // Try one more thing - search by string comparison
