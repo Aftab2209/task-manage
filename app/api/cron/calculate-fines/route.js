@@ -1,7 +1,9 @@
+// app/api/fines/calculate/route.js (or your original route)
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/mongodb';
 import DailyEntry from '@/models/DailyEntry';
 import FineLedger from '@/models/FineLedger';
+import TaskType from '@/models/TaskType';
 import { getTodayIST, calculateFine } from '@/lib/helpers';
 
 export async function GET() {
@@ -9,6 +11,11 @@ export async function GET() {
     await dbConnect();
 
     const today = getTodayIST();
+
+    // Get the morning jobs task type ID to exclude it
+    const morningJobsTaskType = await TaskType.findOne({ 
+      key: 'morning_jobs_applied' 
+    });
 
     const entries = await DailyEntry.find({
       date: today,
@@ -18,7 +25,14 @@ export async function GET() {
     const results = [];
 
     for (const entry of entries) {
-      const { fine, failedTasks } = calculateFine(entry.tasks);
+      // Filter out the morning jobs task - only process other tasks
+      const tasksToProcess = entry.tasks.filter(task => {
+        if (!morningJobsTaskType) return true; // If no morning jobs task exists, process all
+        return task.taskType._id.toString() !== morningJobsTaskType._id.toString();
+      });
+
+      // Calculate fine only for non-morning-jobs tasks
+      const { fine, failedTasks } = calculateFine(tasksToProcess);
 
       entry.dailyFine = fine;
       entry.fineCalculatedAt = new Date();
@@ -39,11 +53,12 @@ export async function GET() {
         date: today,
         fine,
         tasksFailed: failedTasks,
+        excludedMorningJobs: !!morningJobsTaskType,
       });
     }
 
     return NextResponse.json({
-      message: 'Fines calculated successfully',
+      message: 'Fines calculated successfully (excluding morning jobs)',
       processed: results.length,
       results,
     });
