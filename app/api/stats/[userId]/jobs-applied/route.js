@@ -8,18 +8,13 @@ export async function GET(request, { params }) {
   try {
     await dbConnect();
     const { userId } = await params;
-    
-    // // Get jobs_applied task type
-    // const jobsTaskType = await TaskType.findOne({ key: 'jobs_applied' });
-    // if (!jobsTaskType) {
-    //   return NextResponse.json({ error: 'Jobs applied task not found' }, { status: 404 });
-    // }
-    
-    // Get all entries
+
+    // Get both job-related task types
+    const jobsTaskType = await TaskType.findOne({ key: 'jobs_applied' });
+    const morningJobsTaskType = await TaskType.findOne({ key: 'morning_jobs_applied' });
+
     const allEntries = await DailyEntry.find({ user: userId });
 
-    console.log(allEntries, 'aaaa')
-    
     // Calculate totals
     let totalJobs = 0;
     let last7DaysJobs = 0;
@@ -33,25 +28,31 @@ export async function GET(request, { params }) {
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
     
     allEntries.forEach(entry => {
-      const jobsTask = entry.tasks.find(
-        t => t.taskType.toString() === "67549a3e8a9e47b3f0d2c101"
+      // Find both job tasks
+      const regularJobsTask = entry.tasks.find(
+        t => jobsTaskType && t.taskType.toString() === jobsTaskType._id.toString()
+      );
+      const morningJobsTask = entry.tasks.find(
+        t => morningJobsTaskType && t.taskType.toString() === morningJobsTaskType._id.toString()
       );
       
-      if (jobsTask) {
-        const jobs = parseInt(jobsTask.value) || 0;
-        totalJobs += jobs;
-        
-        const entryDate = new Date(entry.date);
-        if (entryDate >= sevenDaysAgo) {
-          last7DaysJobs += jobs;
-        }
-        if (entryDate >= thirtyDaysAgo) {
-          last30DaysJobs += jobs;
-        }
-        
-        if (jobs > bestDay.jobs) {
-          bestDay = { date: entry.date, jobs };
-        }
+      // Sum both job counts
+      const regularJobs = regularJobsTask ? parseInt(regularJobsTask.value) || 0 : 0;
+      const morningJobs = morningJobsTask ? parseInt(morningJobsTask.value) || 0 : 0;
+      const jobs = regularJobs + morningJobs;
+      
+      totalJobs += jobs;
+      
+      const entryDate = new Date(entry.date);
+      if (entryDate >= sevenDaysAgo) {
+        last7DaysJobs += jobs;
+      }
+      if (entryDate >= thirtyDaysAgo) {
+        last30DaysJobs += jobs;
+      }
+      
+      if (jobs > bestDay.jobs) {
+        bestDay = { date: entry.date, jobs };
       }
     });
     
