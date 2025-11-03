@@ -453,7 +453,7 @@ export default function TaskList({ userId = "67549a3e8a9e47b3f0d2c001", setActiv
                     min="0"
                     defaultValue={selectedTask.value}
                     id="customValue"
-                    className="flex-1 px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-purple-500 focus:outline-none bg-white text-gray-900"
+                    className="w-2/3 px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-purple-500 focus:outline-none bg-white text-gray-900"
                   />
                   <button
                     onClick={() => {
@@ -462,7 +462,7 @@ export default function TaskList({ userId = "67549a3e8a9e47b3f0d2c001", setActiv
                       handleUpdateTaskValue(selectedTask.taskType._id, newValue)
                     }}
                     disabled={updatingTaskId === selectedTask.taskType._id}
-                    className="px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold rounded-lg hover:shadow-lg transition disabled:opacity-50"
+                    className="px-6 w-1/3 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold rounded-lg hover:shadow-lg transition disabled:opacity-50"
                   >
                     {updatingTaskId === selectedTask.taskType._id ? "Saving..." : "Set"}
                   </button>
