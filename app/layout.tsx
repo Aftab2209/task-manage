@@ -4,6 +4,7 @@ import { Poppins } from "next/font/google"
 import { Geist_Mono } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import "./globals.css"
+import AuthProvider from "@/components/AuthProvider"
 
 const poppins = Poppins({ weight: ["400", "500", "600", "700"], subsets: ["latin"] })
 const geistMono = Geist_Mono({ subsets: ["latin"] })
@@ -23,8 +24,8 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${poppins.className} antialiased`}>
-        {children}
-        <Analytics />
+        <AuthProvider>{children}
+          <Analytics /></AuthProvider>
       </body>
     </html>
   )

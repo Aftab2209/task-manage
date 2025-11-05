@@ -4,13 +4,16 @@ import dbConnect from '@/lib/mongodb';
 import DailyEntry from '@/models/DailyEntry';
 import FineLedger from '@/models/FineLedger';
 import TaskType from '@/models/TaskType';
-import { getTodayIST, evaluateCompletionRule } from '@/lib/helpers';
+import { getTodayIST, evaluateCompletionRule, isSpecialDay, getEffectiveRule } from '@/lib/helpers';
 
 export async function GET() {
   try {
     await dbConnect();
 
     const today = getTodayIST();
+
+    // Check if today is a special day
+    const isTodaySpecial = await isSpecialDay(today);
 
     // Find the morning jobs task type by key
     const morningJobsTaskType = await TaskType.findOne({ 
@@ -23,6 +26,9 @@ export async function GET() {
         error: 'Morning jobs task type not found' 
       }, { status: 404 });
     }
+
+    // Get the effective rule for today
+    const effectiveRule = getEffectiveRule(morningJobsTaskType, isTodaySpecial);
 
     // Find all entries for today
     const entries = await DailyEntry.find({ date: today });
@@ -41,7 +47,6 @@ export async function GET() {
       }
 
       // Check if this specific task is already marked as calculated
-      // (We'll track this separately to avoid recalculation)
       const isAlreadyCalculated = morningJobTask.markedAt && 
         new Date(morningJobTask.markedAt).toDateString() === new Date().toDateString();
 
@@ -50,10 +55,10 @@ export async function GET() {
         continue;
       }
 
-      // Evaluate if the task is completed
+      // Evaluate if the task is completed using the effective rule (special day or regular)
       const isCompleted = evaluateCompletionRule(
         morningJobTask.value,
-        morningJobsTaskType.completionRule
+        effectiveRule
       );
 
       // Calculate fine only if failed
@@ -108,12 +113,16 @@ export async function GET() {
         completed: isCompleted,
         fine: taskFine,
         totalDailyFine: entry.dailyFine,
+        ruleUsed: effectiveRule,
+        isSpecialDay: isTodaySpecial,
       });
     }
 
     return NextResponse.json({
-      message: 'Morning jobs fines calculated successfully',
+      message: `Morning jobs fines calculated successfully${isTodaySpecial ? ' - SPECIAL DAY 🎉' : ''}`,
       processed: results.length,
+      isSpecialDay: isTodaySpecial,
+      ruleUsed: effectiveRule,
       results,
     });
   } catch (error) {

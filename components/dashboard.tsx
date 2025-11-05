@@ -1,5 +1,6 @@
 "use client"
 
+import { useAuth } from "@/lib/hooks/useAuth"
 import { useEffect, useState } from "react"
 
 interface DashboardProps {
@@ -67,12 +68,25 @@ export default function Dashboard({ setActiveTab }: DashboardProps) {
     streak: null,
   })
   const [loading, setLoading] = useState(true)
+  const { user, logout, isLoading } = useAuth();
 
-  useEffect(() => {
+useEffect(() => {
+    // Wait until auth loading is complete
+    if (isLoading) {
+      return;
+    }
+
+    // If no user after loading completes, don't fetch
+    if (!user?._id) {
+      setLoading(false);
+      return;
+    }
+
+    // Fetch stats whenever we have a valid user
     async function fetchStats() {
-      
+      setLoading(true); // Set loading true when starting fetch
       try {
-        const userId = "67549a3e8a9e47b3f0d2c001"
+        const userId = user?._id;
 
         const [studyRes, jobsRes, finesRes, streakRes] = await Promise.all([
           fetch(`/api/stats/${userId}/study-hours`),
@@ -102,9 +116,12 @@ export default function Dashboard({ setActiveTab }: DashboardProps) {
     }
 
     fetchStats()
-  }, [])
-
+  }, [user?._id]) // Removed isLoading from deps - only trigger on user._id change
+  if (isLoading) {
+    return <div></div>
+  }
   return (
+
     <div className="min-h-screen" style={{ backgroundColor: "#F7F5FF" }}>
       {/* Header */}
       <div className="px-6 pt-4 pb-4 border-b" style={{ borderColor: "#E6E6E6" }}>
@@ -113,14 +130,14 @@ export default function Dashboard({ setActiveTab }: DashboardProps) {
             Dashboard
           </h1>
           <button className="p-2 rounded-full transition" style={{ color: "#B0B0B0" }}>
- <svg  className="w-8 h-8"  viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
-  <g fill="none" fill-rule="evenodd">
-    <circle cx="32" cy="32" r="30" fill="#B4DFFB"/>
-    <ellipse cx="32" cy="30" fill="#595959" rx="10" ry="8"/>
-    <path fill="#595959" d="M22.1389646 60.3416736C22.0475744 59.2550172 22 58.1386202 22 57 22 45.954305 26.4771525 37 32 37 37.5228475 37 42 45.954305 42 57 42 58.1386202 41.9524256 59.2550172 41.8610354 60.3416736 38.7725974 61.4161234 35.4544846 62 32 62 28.5455154 62 25.2274026 61.4161234 22.1389646 60.3416736zM28.6125273 23.0478694C28.6125273 23.0478694 26.6572522 18.5507674 24.4705652 17 24.4705652 17 22.1178789 23.1756087 23.3641084 28.2984482"/>
-    <path fill="#595959" d="M40.6125273,23.0478694 C40.6125273,23.0478694 38.6572522,18.5507674 36.4705652,17 C36.4705652,17 34.1178789,23.1756087 35.3641084,28.2984482" transform="matrix(-1 0 0 1 75.613 0)"/>
-  </g>
-</svg>
+            <svg className="w-8 h-8" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+              <g fill="none" fill-rule="evenodd">
+                <circle cx="32" cy="32" r="30" fill="#B4DFFB" />
+                <ellipse cx="32" cy="30" fill="#595959" rx="10" ry="8" />
+                <path fill="#595959" d="M22.1389646 60.3416736C22.0475744 59.2550172 22 58.1386202 22 57 22 45.954305 26.4771525 37 32 37 37.5228475 37 42 45.954305 42 57 42 58.1386202 41.9524256 59.2550172 41.8610354 60.3416736 38.7725974 61.4161234 35.4544846 62 32 62 28.5455154 62 25.2274026 61.4161234 22.1389646 60.3416736zM28.6125273 23.0478694C28.6125273 23.0478694 26.6572522 18.5507674 24.4705652 17 24.4705652 17 22.1178789 23.1756087 23.3641084 28.2984482" />
+                <path fill="#595959" d="M40.6125273,23.0478694 C40.6125273,23.0478694 38.6572522,18.5507674 36.4705652,17 C36.4705652,17 34.1178789,23.1756087 35.3641084,28.2984482" transform="matrix(-1 0 0 1 75.613 0)" />
+              </g>
+            </svg>
           </button>
         </div>
       </div>
@@ -143,7 +160,7 @@ export default function Dashboard({ setActiveTab }: DashboardProps) {
               }}
             >
               <div className="text-[24px] font-semibold" style={{ color: "#1C1C1E" }}>
-                {loading ? "-" : `${stats.studyHours?.totalHours.toFixed(1)}h`}
+                {loading ? "-" : `${stats.studyHours?.totalHours?.toFixed(1)}h`}
               </div>
               <div className="text-[14px] font-medium mt-1" style={{ color: "#7A7A7A" }}>
                 Total Study Hours
@@ -286,7 +303,7 @@ export default function Dashboard({ setActiveTab }: DashboardProps) {
             </div>
             <div className="flex items-center justify-between mt-2">
               <div className="text-[18px] font-semibold" style={{ color: "#1C1C1E" }}>
-                {loading ? "-" : `${stats.studyHours?.last7Days.toFixed(1)}h`}
+                {loading ? "-" : `${stats.studyHours?.last7Days?.toFixed(1)}h`}
               </div>
               <div
                 className="text-[10px] font-medium px-2 py-1 rounded"

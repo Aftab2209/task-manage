@@ -22,6 +22,10 @@ const taskTypeSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  specialDayCompletionRule: {
+    type: String,
+    required: false, 
+  },
   fineIfFailed: {
     type: Number,
     required: true,

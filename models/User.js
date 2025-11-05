@@ -14,10 +14,17 @@ const userSchema = new mongoose.Schema({
     lowercase: true,
     trim: true
   },
+  password: {
+    type: String,
+    required: true,
+    select: false  // Don't include password in queries by default for security
+  },
   createdAt: {
     type: Date,
     default: Date.now
   }
+}, { 
+  collection: 'users' 
 });
 
 export default mongoose.models.User || mongoose.model('User', userSchema);

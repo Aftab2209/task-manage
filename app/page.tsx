@@ -3,21 +3,22 @@
 import { useState } from "react"
 import Dashboard from "@/components/dashboard"
 import TaskList from "@/components/task-list"
+import { useAuth } from "@/lib/hooks/useAuth"
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<"dashboard" | "tasks">("dashboard")
+  const { user, logout } = useAuth();
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-purple-50 to-white">
-      {activeTab === "dashboard" ? <Dashboard setActiveTab={setActiveTab} /> : <TaskList setActiveTab={setActiveTab} userId= {"67549a3e8a9e47b3f0d2c001"} />}
+      {activeTab === "dashboard" ? <Dashboard setActiveTab={setActiveTab} /> : <TaskList setActiveTab={setActiveTab} userId={user?._id || ''} />}
 
       {/* Bottom Navigation - Mobile Only */}
       <nav className="fixed bottom-0 left-0 right-0 border-t border-purple-200 bg-white flex justify-around items-center h-20 md:hidden shadow-lg">
         <button
           onClick={() => setActiveTab("dashboard")}
-          className={`flex flex-col items-center justify-center w-full h-full gap-1 transition ${
-            activeTab === "dashboard" ? "text-purple-600" : "text-gray-400"
-          }`}
+          className={`flex flex-col items-center justify-center w-full h-full gap-1 transition ${activeTab === "dashboard" ? "text-purple-600" : "text-gray-400"
+            }`}
         >
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path
@@ -31,9 +32,8 @@ export default function Home() {
         </button>
         <button
           onClick={() => setActiveTab("tasks")}
-          className={`flex flex-col items-center justify-center w-full h-full gap-1 transition ${
-            activeTab === "tasks" ? "text-purple-600" : "text-gray-400"
-          }`}
+          className={`flex flex-col items-center justify-center w-full h-full gap-1 transition ${activeTab === "tasks" ? "text-purple-600" : "text-gray-400"
+            }`}
         >
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path

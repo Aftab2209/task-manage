@@ -1,10 +1,10 @@
-// app/api/fines/calculate/route.js (or your original route)
+// app/api/fines/calculate/route.js
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/mongodb';
 import DailyEntry from '@/models/DailyEntry';
 import FineLedger from '@/models/FineLedger';
 import TaskType from '@/models/TaskType';
-import { getTodayIST, calculateFine } from '@/lib/helpers';
+import { getTodayIST, calculateFine, isSpecialDay, getEffectiveRule, evaluateCompletionRule } from '@/lib/helpers';
 
 export async function GET() {
   try {
@@ -17,6 +17,9 @@ export async function GET() {
     yesterday.setDate(yesterday.getDate() - 1);
     const yesterdayStr = yesterday.toISOString().split('T')[0];
 
+    // Check if yesterday was a special day
+    const wasSpecialDay = await isSpecialDay(yesterdayStr);
+
     // Get the morning jobs task type ID to exclude it
     const morningJobsTaskType = await TaskType.findOne({ 
       key: 'morning_jobs_applied' 
@@ -28,16 +31,19 @@ export async function GET() {
     const entries = await DailyEntry.find({
       date: yesterdayStr,
       fineCalculatedAt: null,
-    }).lean(); // Use .lean() for better performance
+    }).lean();
 
     const results = [];
 
     for (const entry of entries) {
       // Manually populate taskType for each task
-      const populatedTasks = entry.tasks.map(task => ({
-        ...task,
-        taskType: allTaskTypes.find(tt => tt._id.toString() === task.taskType.toString())
-      }));
+      const populatedTasks = entry.tasks.map(task => {
+        const taskTypeData = allTaskTypes.find(tt => tt._id.toString() === task.taskType.toString());
+        return {
+          ...task,
+          taskType: taskTypeData
+        };
+      });
 
       // Filter out tasks with null taskType and the morning jobs task
       const tasksToProcess = populatedTasks.filter(task => {
@@ -49,7 +55,13 @@ export async function GET() {
         return task.taskType._id.toString() !== morningJobsTaskType._id.toString();
       });
 
-      // Calculate fine only for non-morning-jobs tasks
+      // RE-EVALUATE completion status based on special day rules
+      for (const task of tasksToProcess) {
+        const effectiveRule = getEffectiveRule(task.taskType, wasSpecialDay);
+        task.completed = evaluateCompletionRule(task.value, effectiveRule);
+      }
+
+      // Calculate fine based on re-evaluated completion status
       const { fine, failedTasks } = calculateFine(tasksToProcess);
 
       // Update the entry in the database
@@ -74,16 +86,19 @@ export async function GET() {
         fine,
         tasksFailed: failedTasks,
         excludedMorningJobs: !!morningJobsTaskType,
+        wasSpecialDay,
       });
     }
 
     return NextResponse.json({
-      message: 'Fines calculated successfully for yesterday (excluding morning jobs)',
+      message: `Fines calculated successfully for yesterday (excluding morning jobs)${wasSpecialDay ? ' - SPECIAL DAY 🎉' : ''}`,
       processed: results.length,
       calculatedFor: yesterdayStr,
+      wasSpecialDay,
       results,
     });
   } catch (error) {
+    console.error('Error calculating fines:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

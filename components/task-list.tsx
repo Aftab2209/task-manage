@@ -8,6 +8,7 @@ interface TaskType {
   key: string
   inputType: "integer" | "decimal" | "boolean"
   completionRule: string
+  appliedRule?: string
   fineIfFailed: number
   active: boolean
 }
@@ -36,7 +37,7 @@ interface TaskListProps {
   setActiveTab?: (tab: "dashboard" | "tasks") => void
 }
 
-export default function TaskList({ userId = "67549a3e8a9e47b3f0d2c001", setActiveTab }: TaskListProps) {
+export default function TaskList({ userId, setActiveTab }: TaskListProps) {
   const [dailyEntry, setDailyEntry] = useState<DailyEntry | null>(null)
   const [taskTypes, setTaskTypes] = useState<TaskType[]>([])
   const [loading, setLoading] = useState(true)
@@ -56,31 +57,36 @@ export default function TaskList({ userId = "67549a3e8a9e47b3f0d2c001", setActiv
 
   const today = getTodayIST()
 
-  // Fetch task types and today's entry
   useEffect(() => {
     async function fetchData() {
       try {
         setLoading(true)
 
-        // Fetch task types
         const taskTypesRes = await fetch('/api/task-types')
         const taskTypesData = await taskTypesRes.json()
         setTaskTypes(taskTypesData)
 
-
-
-        // Fetch today's daily entry (auto-creates if doesn't exist)
         const entryRes = await fetch(`/api/daily-entries/${userId}/${today}`)
         const entryData = await entryRes.json()
 
         const populatedEntry = {
           ...entryData,
-          tasks: entryData.tasks.map((task: any) => ({
-            ...task,
-            taskType: taskTypesData.find((tt: TaskType) => tt._id === task.taskType) || null
-          }))
-        }
+          tasks: entryData.tasks.map((task: any) => {
+            const taskType = taskTypesData.find(
+              (tt: TaskType) => tt._id === task.taskType
+            );
 
+            const appliedRule =
+              entryData.isSpecialDay && taskType?.specialDayCompletionRule
+                ? taskType.specialDayCompletionRule
+                : taskType?.completionRule;
+
+            return {
+              ...task,
+              taskType: taskType ? { ...taskType, appliedRule } : null,
+            };
+          }),
+        };
         setDailyEntry(populatedEntry)
 
 
@@ -94,7 +100,6 @@ export default function TaskList({ userId = "67549a3e8a9e47b3f0d2c001", setActiv
     fetchData()
   }, [userId, today])
 
-  // Map completion status to UI status
   const getTaskStatus = (task: TaskEntry): "Complete" | "To Do" | "In Progress" => {
     if (task.completed) {
       return "Complete"
@@ -105,7 +110,6 @@ export default function TaskList({ userId = "67549a3e8a9e47b3f0d2c001", setActiv
     }
   }
 
-  // Filter tasks based on status
   const filteredTasks = dailyEntry?.tasks.filter((task) => {
     // Defensive check: Skip tasks with null/undefined taskType
     if (!task.taskType) {
@@ -172,11 +176,23 @@ export default function TaskList({ userId = "67549a3e8a9e47b3f0d2c001", setActiv
 
       const populatedEntry = {
         ...entryData,
-        tasks: entryData.tasks.map((task: any) => ({
-          ...task,
-          taskType: taskTypesData.find((tt: TaskType) => tt._id === task.taskType) || null
-        }))
-      }
+        tasks: entryData.tasks.map((task: any) => {
+          const taskType = taskTypesData.find(
+            (tt: TaskType) => tt._id === task.taskType
+          );
+
+          // if today is a special day and specialDayCompletionRule exists, use that
+          const appliedRule =
+            entryData.isSpecialDay && taskType?.specialDayCompletionRule
+              ? taskType.specialDayCompletionRule
+              : taskType?.completionRule;
+
+          return {
+            ...task,
+            taskType: taskType ? { ...taskType, appliedRule } : null,
+          };
+        }),
+      };
 
       setDailyEntry(populatedEntry)
       // const updatedEntry = await res.json()
@@ -324,7 +340,7 @@ export default function TaskList({ userId = "67549a3e8a9e47b3f0d2c001", setActiv
 
                   {/* Footer Info */}
                   <div className="flex justify-between items-center text-xs text-gray-500">
-                    <span>Rule: {taskType.completionRule}</span>
+                    <span>Rule: {taskType.appliedRule}</span>
                     {task.markedAt && (
                       <span>Updated: {new Date(task.markedAt).toLocaleTimeString('en-IN', {
                         hour: '2-digit',
@@ -473,7 +489,7 @@ export default function TaskList({ userId = "67549a3e8a9e47b3f0d2c001", setActiv
               <div className="pt-4 border-t border-gray-200 space-y-2 text-sm text-gray-600">
                 <div className="flex justify-between">
                   <span>Completion Rule:</span>
-                  <span className="font-medium text-gray-900">{selectedTask.taskType.completionRule}</span>
+                  <span className="font-medium text-gray-900">{selectedTask.taskType.appliedRule}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Fine if Failed:</span>
