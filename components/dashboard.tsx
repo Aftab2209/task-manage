@@ -27,29 +27,6 @@ interface StatsData {
   } | null
 }
 
-const cardData = [
-  {
-    status: "In Progress",
-    count: 24,
-    gradient: "linear-gradient(135deg, #7DA4FF 0%, #C1D1FF 100%)",
-  },
-  {
-    status: "In Review",
-    count: 56,
-    gradient: "linear-gradient(135deg, #C38DFF 0%, #E5CFFF 100%)",
-  },
-  {
-    status: "On Hold",
-    count: 16,
-    gradient: "linear-gradient(135deg, #FBC56E 0%, #FFE5A7 100%)",
-  },
-  {
-    status: "Completed",
-    count: 45,
-    gradient: "linear-gradient(135deg, #7AD999 0%, #C4F3D1 100%)",
-  },
-]
-
 const chartData = [
   { day: "M", progress: 15, review: 8, complete: 12 },
   { day: "T", progress: 20, review: 10, complete: 18 },
@@ -70,7 +47,7 @@ export default function Dashboard({ setActiveTab }: DashboardProps) {
   const [loading, setLoading] = useState(true)
   const { user, logout, isLoading } = useAuth();
 
-useEffect(() => {
+  useEffect(() => {
     // Wait until auth loading is complete
     if (isLoading) {
       return;
