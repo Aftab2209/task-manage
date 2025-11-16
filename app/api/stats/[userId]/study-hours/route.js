@@ -41,8 +41,6 @@ export async function GET(request, { params }) {
       );
       
       if (studyTask) {
-
-        console.log(studyTask, 'aaa')
         const hours = parseFloat(studyTask.value) || 0;
         totalHours += hours;
         
